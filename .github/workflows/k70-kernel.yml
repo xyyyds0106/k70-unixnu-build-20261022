@@ -1,6 +1,6 @@
 name: K70 pinned source kernel
 
-# Manual-only, source-kernel milestone. This workflow has not been run here.
+# Manual-only source-kernel milestone; hardware execution is a separate step.
 on:
   workflow_dispatch:
     inputs:
@@ -144,6 +144,31 @@ jobs:
             --profile "$BUILD_PROFILE" --check \
             2>&1 | tee "$GITHUB_WORKSPACE/ci-artifacts/configuration-check.log"
 
+      - name: Fetch the pinned public-header listings with the workflow token
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          read -r driverkit_tag trustcache_tag < <(
+            python3 - "$GITHUB_WORKSPACE/upstream/feeds.toml" <<'PY'
+          from pathlib import Path
+          import sys
+          import tomllib
+          feeds = tomllib.loads(Path(sys.argv[1]).read_text())
+          xnu = next(entry for entry in feeds["source"] if entry["name"] == "xnu")
+          print(xnu["driverkit_tag"], xnu["trustcache_tag"])
+          PY
+          )
+          cache_root="$GITHUB_WORKSPACE/out/vermeer/tree/.cache/sources"
+          mkdir -p "$cache_root"
+          gh api --method GET repos/apple-oss-distributions/xnu/contents/iokit/DriverKit \
+            -f "ref=$driverkit_tag" > "$cache_root/xnu-driverkit-${driverkit_tag#xnu-}.json"
+          gh api --method GET repos/apple-oss-distributions/xnu/contents/iokit/DriverKit/crypto \
+            -f "ref=$driverkit_tag" > "$cache_root/xnu-driverkit-crypto-${driverkit_tag#xnu-}.json"
+          gh api --method GET repos/apple-oss-distributions/xnu/contents/EXTERNAL_HEADERS/TrustCache \
+            -f "ref=$trustcache_tag" > "$cache_root/xnu-trustcache-${trustcache_tag#xnu-}.json"
+          # The unchanged upstream preparer still verifies every restored Git blob.
+
       - name: Build the source kernel and collect its real symbols and HMAC
         working-directory: device
         run: |
@@ -199,6 +224,7 @@ jobs:
             out/vermeer/tree/build/armcpu/**
             out/vermeer/tree/build/armdt-platform/**
             out/vermeer/tree/.cache/vermeer-patch-report.json
+            out/vermeer/tree/.cache/sources/xnu-*.json
           include-hidden-files: true
           if-no-files-found: warn
           retention-days: 7

@@ -13,3 +13,9 @@ Successful compilation does not establish K70 boot, root, display, touch or GPU 
 
 The workflow pins the device and core source revisions and records the actual
 macOS/Xcode/SDK/compiler versions for each run.
+
+Public DriverKit and TrustCache header listings are fetched with the workflow's
+read-only GitHub token to avoid the shared runner's anonymous API rate limit.
+Their source tags still come from the pinned feeds, and the unchanged upstream
+header preparer verifies each downloaded file against its recorded Git blob hash.
+The token is not stored in artifacts or added to the source repositories.
