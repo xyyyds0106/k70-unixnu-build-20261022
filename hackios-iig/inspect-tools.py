@@ -8,7 +8,7 @@ out = Path('iig-out/tool-options')
 out.mkdir(parents=True, exist_ok=True)
 records = []
 for tool in sorted(Path('/Applications').glob('Xcode*.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/iig')):
-    label = tool.parents[5].stem
+    label = tool.parents[6].stem
     record = dict(tool=str(tool), binary_sha256=hashlib.sha256(tool.read_bytes()).hexdigest(), commands=[])
     for flag in ('--help', '-help', '--version'):
         command = [str(tool), flag]

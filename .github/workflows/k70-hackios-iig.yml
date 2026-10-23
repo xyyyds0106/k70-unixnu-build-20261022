@@ -62,6 +62,10 @@ jobs:
           python3 -u hackios-iig/build.py --source xnu --out iig-out/generated --sdk iphoneos \
             2>&1 | tee iig-out/generation.log
 
+      - name: Probe the documented deployment target option
+        shell: bash
+        run: python3 -u hackios-iig/probe-deployment.py
+
       - name: Preserve generated source and exact invocation evidence
         if: always()
         uses: actions/upload-artifact@v4
