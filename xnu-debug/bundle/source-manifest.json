@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "xnu_commit": "d8b80295118ef25ac3a784134bcf95cd8e88109f",
+  "unixnu_commit": "b6ae99c17194e6a18fd819d3148e69fe405e91fc",
+  "device_commit": "d4dbb3683023a17bb468b9774f52c87f3060e739",
+  "serial": "K70XNU001",
+  "files": {
+    "src/k70_usb_guards.inc": "ffeeb1ef34de42950a9cc7c20b4af8bcbb01b1964ca799dda716af19b1834acf",
+    "src/k70_usb_status.inc": "42f0183edec431df8aa3e9590083fb2e5a8eef8b0580047847615cc17083ec4a",
+    "src/k70_usb_transport.inc": "727a060ee956500175157446ede914cf081c509b45b3cebcd5637c2a6b5c80c6",
+    "src/k70_xnu_usb.c": "3a6f2e71bb63334a98a97a9d416a05b3394e987b97d9ae277460e3608833f0e6",
+    "zzzz-k70-usb-log.patch": "f7a1b67c1d3721da66240f6a803f15a742ba2e9443f765e37b0958ba768fe2dc"
+  },
+  "scope": "kernel log only; no crypto changes, no root or OS data"
+}
