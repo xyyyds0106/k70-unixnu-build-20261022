@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "parent_source_manifest_sha256": "370e4f6c3da12641549fc4cc2c01b5d79dc24728a4cd6b231de5888e06bf0fea",
+  "parent_kernel_sha256": "535e31251cd73d27ca9dcd5ea3e5fbfa1291187f69fbcec5c3abab5dba9c970a",
+  "parent_ci_manifest_sha256": "cc54b6e4da4ed7d6f48b5a394a700ca4896be221850e9c8e23fe94f09cec3b6f",
+  "bootarg": "k70_probe",
+  "default_mode": 0,
+  "modes": {
+    "1": "after-PE_FALSE-and-existing-early-log",
+    "2": "immediately-before-arm_vm_init",
+    "3": "after-VM-before-USB-initialize"
+  },
+  "delay_ms": 4000,
+  "counter": "CNTPCT_EL0/CNTFRQ_EL0, 1MHz..1GHz, stable frequency, monotonic, stopped-clock and total-read budgets",
+  "failure": "append RAM status and continue parent normal flow; no reset fallback",
+  "psci": "actual ADT /psci exact compatible/method; VERSION>=1.0; FEATURES(SYSTEM_RESET)>=0; independent SMCCC32",
+  "symbols": [
+    "_k70_xnu_probe",
+    "_k70_probe_psci",
+    "_k70_probe_wait"
+  ],
+  "usb_or_efi_dependency": false,
+  "pmic_or_storage_access": false,
+  "crypto_post_hmac_and_platform_policy": "inherited unchanged",
+  "evidence_limit": "Host PLAN is input intent only; reset/recovery supports an inferred checkpoint, not received XNU log or full boot"
+}

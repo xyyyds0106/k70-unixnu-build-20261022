@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "xnu_commit": "d8b80295118ef25ac3a784134bcf95cd8e88109f",
+  "unixnu_commit": "b6ae99c17194e6a18fd819d3148e69fe405e91fc",
+  "device_commit": "d4dbb3683023a17bb468b9774f52c87f3060e739",
+  "serial": "K70XNU001",
+  "device_fixes": {
+    "schema_version": 1,
+    "kind": "existing-upstream-dt-panic-region",
+    "device_commit": "d4dbb3683023a17bb468b9774f52c87f3060e739",
+    "files": {
+      "configs/vermeer_platform_defconfig": {
+        "before_sha256": "cf4354659d71c7b8ef23fcd8800ae52e13e2ca6735f640f44e17e742ab902c35",
+        "after_sha256": "4dbc43ff3d73125bd9777776376c26fb21f21317f1e5575374c8b9b5aedfd484"
+      },
+      "tools/build_source_kernel.py": {
+        "before_sha256": "41196a776da535b454add4b2afa139824f214ae50d2a8ef0bf45d5774fa45967",
+        "after_sha256": "5096d06ccd7f4931402adde65275557941343761634a94cf7f5139eb1bc3397e"
+      },
+      "tests/test_configuration.py": {
+        "before_sha256": "7b9e3a424f0cffd54571e5b591ab9793c0ebc52979bb5ef94186471d6ff510d3",
+        "after_sha256": "21d455d34c92fa931657671743252fd60f7daeee8b7d1aeee620bd80917f562b"
+      }
+    },
+    "setting": "CONFIG_XNU_DT_PANIC_REGION=y",
+    "upstream_patch": "native-dt-panic-region.patch",
+    "upstream_patch_sha256": "b60c2a9a72ea23832f1e64348a5c5d1152cf05db6c156283dd8a93c804cd89cb",
+    "unsafe_previous_kernel_sha256": "747f0fc77a2aaecd4615c345171ac778fdce6a0620b1c999f7e07bcf3917b395",
+    "previous_disassembly": "reports/k70-current-pe-create-console-disassembly.txt",
+    "reference": "https://github.com/tycykp/UniXNU-OnePlus-Ace5/blob/694b39eb76e4019c75c89780812c68c12070658e/hardware/panic-console-fixed-address.json",
+    "crypto_post_and_hmac": "unchanged"
+  },
+  "control": {
+    "version": 1,
+    "max_wire_bytes": 256,
+    "mailbox_requests": 1,
+    "reset": "exact boot ID,10-second single-use token, validated DT PSCI conduit and FEATURES",
+    "execution": "foreground/worker only after USB poll returns; never console producer"
+  },
+  "files": {
+    "control-contract.json": "294f2d5e9d5373a1b50ce33e72845a4e2a0a389f8d3b4001720053fd6c9f579f",
+    "device-files/configs/vermeer_platform_defconfig": "4dbc43ff3d73125bd9777776376c26fb21f21317f1e5575374c8b9b5aedfd484",
+    "device-files/tests/test_configuration.py": "21d455d34c92fa931657671743252fd60f7daeee8b7d1aeee620bd80917f562b",
+    "device-files/tools/build_source_kernel.py": "5096d06ccd7f4931402adde65275557941343761634a94cf7f5139eb1bc3397e",
+    "device-fixes.json": "4f376ef83e05fa36afd47c314e578cdc76c7152f3b80983d6e84daf75337171b",
+    "parent-ci-manifest.json": "cc54b6e4da4ed7d6f48b5a394a700ca4896be221850e9c8e23fe94f09cec3b6f",
+    "parent-files/src/k70_xnu_usb.c": "794eae80199065d3aa04aab3f1fe872e1723af94dd76a7e877b10ce2b2697cff",
+    "parent-files/zzzz-k70-usb-log.patch": "6def26ea9a3ef5f5e3ea3f2608a5b8f3d25ee7a95ee54c37d3d5f9fe09782a43",
+    "parent-source-manifest.json": "370e4f6c3da12641549fc4cc2c01b5d79dc24728a4cd6b231de5888e06bf0fea",
+    "probe-contract.json": "34a0a6924964a2e4bce0bcba5de072789ba2274df81996685507db62130011c4",
+    "src/k70_ctl_protocol.inc": "a263f549b55c6d5251d76a64672f66c998151196065dc0f0ca2152dc5192ee84",
+    "src/k70_probe_logic.inc": "cf3148d5c27d266893cdc15fe98062f4f42f107da3c14e6c822401b16aaba2c8",
+    "src/k70_usb_guards.inc": "ffeeb1ef34de42950a9cc7c20b4af8bcbb01b1964ca799dda716af19b1834acf",
+    "src/k70_usb_status.inc": "42f0183edec431df8aa3e9590083fb2e5a8eef8b0580047847615cc17083ec4a",
+    "src/k70_usb_transport.inc": "883efe8016189c913c673a6c025fdd498058e95f83fd3ccad55fb27aafd0cf22",
+    "src/k70_xnu_control.inc": "cdcc8eb8a7422842427b069929a8f90e84c1e98b224456db17475f639cdd77e9",
+    "src/k70_xnu_probe.inc": "4af8ba1bb73ad2363df06721fbf44136c0d1e6c8a8e9dbf5636bf17b58f79e26",
+    "src/k70_xnu_usb.c": "f69282e4a50a9c62789a3ba98fe476bba551e1238b362cb52efdcf3663499a12",
+    "zzzz-k70-usb-log.patch": "2c7531e6dc7a0244c7d9295aceaea92876aba39140b2b46ebc3bac90bb4d3757"
+  },
+  "scope": "Parent control kernel plus explicitly selected early PSCI checkpoint probes; no crypto/platform/storage change",
+  "early_probe": {
+    "version": 1,
+    "parent_source_manifest_sha256": "370e4f6c3da12641549fc4cc2c01b5d79dc24728a4cd6b231de5888e06bf0fea",
+    "parent_kernel_sha256": "535e31251cd73d27ca9dcd5ea3e5fbfa1291187f69fbcec5c3abab5dba9c970a",
+    "parent_ci_manifest_sha256": "cc54b6e4da4ed7d6f48b5a394a700ca4896be221850e9c8e23fe94f09cec3b6f",
+    "bootarg": "k70_probe",
+    "default_mode": 0,
+    "modes": {
+      "1": "after-PE_FALSE-and-existing-early-log",
+      "2": "immediately-before-arm_vm_init",
+      "3": "after-VM-before-USB-initialize"
+    },
+    "delay_ms": 4000,
+    "counter": "CNTPCT_EL0/CNTFRQ_EL0, 1MHz..1GHz, stable frequency, monotonic, stopped-clock and total-read budgets",
+    "failure": "append RAM status and continue parent normal flow; no reset fallback",
+    "psci": "actual ADT /psci exact compatible/method; VERSION>=1.0; FEATURES(SYSTEM_RESET)>=0; independent SMCCC32",
+    "symbols": [
+      "_k70_xnu_probe",
+      "_k70_probe_psci",
+      "_k70_probe_wait"
+    ],
+    "usb_or_efi_dependency": false,
+    "pmic_or_storage_access": false,
+    "crypto_post_hmac_and_platform_policy": "inherited unchanged",
+    "evidence_limit": "Host PLAN is input intent only; reset/recovery supports an inferred checkpoint, not received XNU log or full boot"
+  },
+  "integration_tools": {
+    "base_verify_kernel.py": "54736d87b3d30c9d1dd7e129760a3fe24951f5ec8c55edb949ca75cd9a958334",
+    "build_bundle.py": "97a491a0fe692d22dd7e69570c5806510ded4db92949e75fd1416b625fa3ea9e",
+    "bundle_contract.py": "a6f68ac58403d2a2ed184a4f91cfe0efef58b1217f43c8fabfeada5a07d700d8",
+    "export_stage.py": "ac819e30f274c548a103c90705a7d6e5f55f723906e705d57fea4ae4fcf3c80a",
+    "inspect_kernel.py": "109e3b90e244e07d74d83304b5221882b1eb6edbee3e033cc29ecca1efab647b",
+    "make_workflow.py": "501f62ad07bdfa5b42bee203b2ab7df4b7ba83d57f2d295e2ab8364937583af9",
+    "prepare_ci.py": "9eb2c8badcd380fe6a74ca30b4a97e3f9b84c0187b869bf92a6d4ae3e10694fe",
+    "test_bundle.py": "832c613d78e6d0bc6f8800f282b0112f0b7461b0ef6c3f3273a45addb8697da3",
+    "verify_kernel.py": "f8f7b11d7df03daf500a04384f22779d275776786022dceb970039decf359301"
+  }
+}

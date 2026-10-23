@@ -1,0 +1,284 @@
+name: K70 early checkpoint probes
+
+# Manual-only source-kernel milestone; hardware execution is a separate step.
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Source baseline or minimal CPU/platform entry candidate
+        type: choice
+        options: [platform]
+        default: platform
+
+permissions:
+  contents: read
+
+concurrency:
+  group: k70-xnu-probes-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  HOMEBREW_NO_AUTO_UPDATE: "1"
+  HOMEBREW_NO_INSTALL_CLEANUP: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  CORE_REF: b6ae99c17194e6a18fd819d3148e69fe405e91fc
+  DEVICE_REF: d4dbb3683023a17bb468b9774f52c87f3060e739
+  BUILD_PROFILE: ${{ inputs.profile || 'platform' }}
+
+jobs:
+  kernel:
+    runs-on: macos-15
+    timeout-minutes: 360
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout the USB debug integration
+        uses: actions/checkout@v4
+        with:
+          path: k70-debug
+          persist-credentials: false
+
+      - name: Checkout the source-build configuration
+        uses: actions/checkout@v4
+        with:
+          repository: mansar1337/UniXNU-vermeer
+          ref: d4dbb3683023a17bb468b9774f52c87f3060e739
+          path: device
+          persist-credentials: false
+
+      - name: Checkout its pinned UniXNU build system
+        uses: actions/checkout@v4
+        with:
+          repository: UniXNU/UniXNU
+          ref: b6ae99c17194e6a18fd819d3148e69fe405e91fc
+          path: upstream
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify and record the pinned source-only board
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/ci-artifacts"
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+          import tomllib
+
+          root = Path(os.environ["GITHUB_WORKSPACE"])
+          records = {}
+          for directory, expected in (("upstream", os.environ["CORE_REF"]),
+                                      ("device", os.environ["DEVICE_REF"])):
+              source = root / directory
+              actual = subprocess.check_output(
+                  ["git", "-C", str(source), "rev-parse", "HEAD"], text=True).strip()
+              if actual != expected:
+                  raise SystemExit(f"{directory}: expected {expected}, got {actual}")
+              submodules = subprocess.check_output(
+                  ["git", "-C", str(source), "submodule", "status", "--recursive"], text=True)
+              if any(line and line[0] != " " for line in submodules.splitlines()):
+                  raise SystemExit(f"{directory}: submodule revision mismatch")
+              records[directory] = {"commit": actual, "submodules": submodules.splitlines()}
+          board_path = root / "device/board.toml"
+          board = tomllib.loads(board_path.read_text())
+          if board["board"]["name"] != "vermeer" or board["board"]["soc"] != "SM8550":
+              raise SystemExit("Unexpected board identity")
+          if any(key in board for key in ("userdata", "ipsw", "payload")) or "prelink" in board["kernel"]:
+              raise SystemExit("Expected the source-only board without GPT, IPSW, payload or prelink")
+          expected_archives = ["build-libpthread-kernel.py", "build-corecrypto-14.py",
+                               "build-corecrypto-14.py --namespace"]
+          if board["kernel"]["archives"] != expected_archives:
+              raise SystemExit("Unexpected source-baseline archive recipe")
+          records["board_sha256"] = hashlib.sha256(board_path.read_bytes()).hexdigest()
+          records["profile"] = os.environ["BUILD_PROFILE"]
+          records["scope"] = "Source XNU only; no prelink, firmware, GPT patch or device execution"
+          (root / "ci-artifacts/sources.json").write_text(json.dumps(records, indent=2) + "\n")
+          PY
+
+      - name: Install the baseline host tools
+        run: |
+          set -euo pipefail
+          brew install cmake ninja unifdef llvm
+          echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
+          echo "$(brew --prefix unifdef)/bin" >> "$GITHUB_PATH"
+
+      - name: Record Xcode and the SDK tool resolution used by XNU
+        run: |
+          set -euo pipefail
+          {
+            sw_vers
+            uname -m
+            xcodebuild -version
+            xcode-select -p
+            python3 --version
+            for sdk in macosx iphoneos; do
+              sdk_path="$(xcrun --sdk "$sdk" --show-sdk-path)"
+              printf '%s SDK: %s\n' "$sdk" "$sdk_path"
+              xcrun --sdk "$sdk" --show-sdk-version
+              # XNU MakeInc.cmd resolves MIG with the selected SDK's absolute path.
+              mig="$(xcrun --sdk "$sdk_path" --find mig)"
+              test -x "$mig"
+              printf '%s MIG: %s\n' "$sdk" "$mig"
+              for diagnostic_tool in migcom iig; do
+                xcrun --sdk "$sdk_path" --find "$diagnostic_tool" || true
+              done
+            done
+            xcrun --sdk iphoneos --find clang
+            for tool in git make clang cmake ninja unifdef xcrun xcodebuild; do
+              command -v "$tool"
+            done
+            make --version
+            clang --version
+            brew list --versions
+          } 2>&1 | tee "$GITHUB_WORKSPACE/ci-artifacts/toolchain.txt"
+
+      - name: Install the bounded USB debug patch into the pinned recipe
+        run: |
+          set -euo pipefail
+          python3 "$GITHUB_WORKSPACE/k70-debug/xnu-probes/prepare_ci.py" \
+            --device "$GITHUB_WORKSPACE/device" \
+            --bundle "$GITHUB_WORKSPACE/k70-debug/xnu-probes/bundle" \
+            > "$GITHUB_WORKSPACE/ci-artifacts/k70-usb-installation.json"
+
+      - name: Check the configuration and optional-display patch guard
+        working-directory: device
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -v \
+            2>&1 | tee "$GITHUB_WORKSPACE/ci-artifacts/unit-tests.log"
+          python3 tools/build_source_kernel.py --unixnu "$GITHUB_WORKSPACE/upstream" \
+            --profile "$BUILD_PROFILE" --check \
+            2>&1 | tee "$GITHUB_WORKSPACE/ci-artifacts/configuration-check.log"
+
+      - name: Fetch the pinned public-header listings with the workflow token
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          read -r driverkit_tag trustcache_tag < <(
+            python3 - "$GITHUB_WORKSPACE/upstream/feeds.toml" <<'PY'
+          from pathlib import Path
+          import sys
+          import tomllib
+          feeds = tomllib.loads(Path(sys.argv[1]).read_text())
+          xnu = next(entry for entry in feeds["source"] if entry["name"] == "xnu")
+          print(xnu["driverkit_tag"], xnu["trustcache_tag"])
+          PY
+          )
+          cache_root="$GITHUB_WORKSPACE/out/vermeer/tree/.cache/sources"
+          mkdir -p "$cache_root"
+          gh api --method GET repos/apple-oss-distributions/xnu/contents/iokit/DriverKit \
+            -f "ref=$driverkit_tag" > "$cache_root/xnu-driverkit-${driverkit_tag#xnu-}.json"
+          gh api --method GET repos/apple-oss-distributions/xnu/contents/iokit/DriverKit/crypto \
+            -f "ref=$driverkit_tag" > "$cache_root/xnu-driverkit-crypto-${driverkit_tag#xnu-}.json"
+          gh api --method GET repos/apple-oss-distributions/xnu/contents/EXTERNAL_HEADERS/TrustCache \
+            -f "ref=$trustcache_tag" > "$cache_root/xnu-trustcache-${trustcache_tag#xnu-}.json"
+          # The unchanged upstream preparer still verifies every restored Git blob.
+
+      - name: Build the source kernel and collect its real symbols and HMAC
+        working-directory: device
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          python3 -u tools/build_source_kernel.py \
+            --unixnu "$GITHUB_WORKSPACE/upstream" --out "$GITHUB_WORKSPACE/out" \
+            --jobs 4 --profile "$BUILD_PROFILE" \
+            2>&1 | tee "$GITHUB_WORKSPACE/out/build-console.log"
+
+      - name: Bind the debug kernel to its source patch and HMAC evidence
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, importlib.util, json, os
+          from pathlib import Path
+          root=Path(os.environ['GITHUB_WORKSPACE'])
+          out=root/'out/vermeer/kernel'
+          kernel=out/'kernel.development.vermeer-build.macho'
+          bundle_path=root/'k70-debug/xnu-probes/bundle/source-manifest.json'
+          bundle=json.loads(bundle_path.read_text())
+          sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+          for name,expected in bundle['files'].items():
+              if sha(bundle_path.parent/name)!=expected: raise SystemExit('Source inventory mismatch: '+name)
+          if bundle.get('control',{}).get('version')!=1: raise SystemExit('K70CTL/1 source contract missing')
+          checker=root/'k70-debug/xnu-probes/verify_kernel.py'
+          spec=importlib.util.spec_from_file_location('verify_kernel',checker)
+          verifier=importlib.util.module_from_spec(spec);spec.loader.exec_module(verifier)
+          validation=verifier.verify(kernel,out/'crypto-hmac.json')
+          if validation.get('early_probe_version')!=1: raise SystemExit('Actual early probe verification missing')
+          (out/'kernel-validation.json').write_text(json.dumps(validation,indent=2)+'\n')
+          files={name:sha(out/name) for name in ('build-report.json','crypto-hmac.json','SHA256SUMS','symbols.txt','kernel-validation.json')}
+          symbols=(out/'symbols.txt').read_text()
+          for symbol in ('_k70_xnu_early','_k70_xnu_after_vm','_k70_xnu_write','_k70_xnu_thread_start',
+                         '_control_receive','_control_service','_control_psci'):
+              if symbol not in symbols: raise SystemExit('Missing real USB hook: '+symbol)
+          report=dict(schema_version=1,kind='k70-xnu-early-probe-source-kernel',kernel_file=kernel.name,
+              kernel_sha256=sha(kernel),kernel_bytes=kernel.stat().st_size,
+              base_refs=dict(unixnu=bundle['unixnu_commit'],device=bundle['device_commit'],xnu=bundle['xnu_commit']),
+              usb_bundle_manifest=bundle,usb_bundle_manifest_sha256=sha(bundle_path),
+              patch_sha256=bundle['files']['zzzz-k70-usb-log.patch'],evidence_files=files,
+              ci=dict(repository=os.environ['GITHUB_REPOSITORY'],run_id=os.environ['GITHUB_RUN_ID'],commit=os.environ['GITHUB_SHA']),
+              control_protocol=validation['control_protocol'],control_symbols=validation['control_symbols_verified'],
+              early_probe_version=validation['early_probe_version'],early_probe_symbols=validation['early_probe_symbols_verified'],
+              parent_source_manifest_sha256=validation['early_probe_parent_source_manifest_sha256'],
+              parent_kernel_sha256=validation['early_probe_parent_kernel_sha256'],
+              scope='parent control kernel plus explicitly selected early PSCI probes; no crypto bypass, OS image or phone operation')
+          (out/'usb-debug-manifest.json').write_text(json.dumps(report,indent=2)+'\n')
+          PY
+
+      - name: Preserve the selected configuration and source lock
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/ci-artifacts"
+          for relative in upstream/feeds.toml device/board.toml device/unixnu.lock \
+              device/configs/vermeer_build_defconfig device/configs/vermeer_platform_defconfig \
+              device/tools/build_source_kernel.py device/tools/prepare_kernel_patches.py; do
+            if [ -f "$GITHUB_WORKSPACE/$relative" ]; then
+              destination="$GITHUB_WORKSPACE/ci-artifacts/$relative"
+              mkdir -p "$(dirname "$destination")"
+              cp "$GITHUB_WORKSPACE/$relative" "$destination"
+            fi
+          done
+          printf '%s\n' \
+            'Source kernel milestone only; no prelink or phone boot image.' \
+            'No firmware, GPT geometry patch, userdata, payload or device test.' \
+            'A successful build does not establish K70 entry, interrupts or full OS support.' \
+            > "$GITHUB_WORKSPACE/ci-artifacts/scope.txt"
+
+      - name: Upload the validated source kernel
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k70-xnu-probes-${{ env.BUILD_PROFILE }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out/vermeer/kernel/**
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload symbols, configuration and logs even after failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k70-xnu-probes-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ci-artifacts/**
+            out/build-console.log
+            out/vermeer/logs/**
+            out/vermeer/.config
+            out/vermeer/tree/build/xnu/ios-sym/**
+            out/vermeer/tree/build/corecrypto-2023/build-report*.json
+            out/vermeer/tree/build/libpthread-kernel/build-report.json
+            out/vermeer/tree/build/armcpu/**
+            out/vermeer/tree/build/armdt-platform/**
+            out/vermeer/tree/.cache/vermeer-patch-report.json
+            out/vermeer/tree/.cache/sources/xnu-*.json
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 7
