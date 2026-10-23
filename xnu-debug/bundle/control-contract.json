@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "protocol": "K70CTL/1",
+  "request": "K70CTL 1 <nonzero-id-hex> <boot-hex-or-0> <command> [argument-hex] LF",
+  "reply": "K70CTL R id=<16hex> boot=<16hex> cmd=<name> status=<status> <fields>",
+  "max_wire_bytes_including_lf": 256,
+  "mailbox_requests": 1,
+  "dispatch": "foreground or worker after USB poll returns; never console producer or RX event",
+  "commands": ["features", "info", "ping", "status", "uptime", "memory", "bootargs", "usb", "replay", "reboot-arm", "reboot-confirm"],
+  "boot_zero": "read-only queries only; replay/reset require exact nonzero boot",
+  "reset_guard": "10-second token, single-use even for wrong-token confirmation; no automatic PMIC fallback",
+  "reset_ack": "atomic append exact interval must remain retained and be covered by current committed cursor; TxBytes not used; USB HALTED required before reset",
+  "psci": {
+    "node": "/psci",
+    "compatible": ["arm,psci-0.2", "arm,psci-1.0"],
+    "method": ["smc\\0", "hvc\\0"],
+    "input_provenance": "host must bind ADT method/compatible to independently verified complete live FDT",
+    "version_minimum": "1.0",
+    "feature_probe_required": "PSCI_FEATURES(SYSTEM_RESET)>=0",
+    "function_ids": {"VERSION": "84000000", "FEATURES": "8400000a", "SYSTEM_RESET": "84000009"},
+    "pinned_platform_component": "UniXNU/ArmDTPlatform@0d544705c2e89725caabc0542bb96bc8febd8c70",
+    "pinned_platform_source_sha256": "07f96a42bdd638022960f5fcaf9e3a07dd73a82c869a70815781cac6d4873b3b",
+    "normal_PE_restart_unavailable_early": "fixed XNU normal path needs PMRootDomain; pinned platform has no haltRestart override or PE_halt_restart registration"
+  },
+  "scope": "diagnostics and authorized automated reset only; no storage/MMIO/memory-write/root/OS, clock, SMMU or crypto changes",
+  "runtime_proven": false
+}

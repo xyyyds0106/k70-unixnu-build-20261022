@@ -31,7 +31,20 @@ QSCRATCH VBUS/session override，不改 clock/PMIC/SMMU route，不写存储。
 （其他平台必需参数沿用经过核对的 ADT/loader 配置）。60 秒是一次有界前景
 枚举窗口，允许 `0..60000` 毫秒；随后继续真实内核启动，并在
 `clock_service_create` 后启动独立轮询线程。USB 中断不接 GIC，不依赖 IRQ 165。
-每批最多消费 64 个事件；Bulk OUT 丢弃，不接受命令。
+每批最多消费 64 个事件；Bulk OUT 只接受有界 K70CTL/1 ASCII 请求。
+单 slot mailbox 在 poll 内只做 framing/queue，命令仅在前景或独立线程的
+poll 返回后执行。普通 console producer 不执行命令。协议规格在
+`tools/xnu-debug/control-protocol.md`，支持 features/info/ping/status/uptime/
+memory/bootargs/usb/replay；memory 仅返回归属元数据，不读任意地址。
+未实现的阶段命令明确返回 unavailable。
+
+软件重启需要当前非零 boot ID、reboot-arm 返回的十秒单次 token 与独立
+reboot-confirm。仅从实际 FDT 验证后复制的 ADT `/psci` 接受 exact smc/hvc
+method，经 PSCI_VERSION >=1.0 与 FEATURES(SYSTEM_RESET) 通过后才能启用。
+不默认 conduit，不复制其他 SoC 的 PMIC 常量。ACK 一次原子追加，按真实
+committed cursor 核验排空，失败即拒绝重启；停止并确认 USB HALTED 后才
+执行标准 PSCI SYSTEM_RESET。系统级 reset 是否成功仍需下一次设备状态
+证明，串口断开或返回 resetting 不代表已恢复 Android。
 普通字符/console 日志生产者仅写环，不执行 USB 命令，避免在关中断的
 kprintf/console 锁中等待硬件。仅明确的检查点、前景窗口和独立线程轮询。
 

@@ -197,7 +197,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import hashlib, json, os
+          import hashlib, importlib.util, json, os
           from pathlib import Path
           root=Path(os.environ['GITHUB_WORKSPACE'])
           out=root/'out/vermeer/kernel'
@@ -205,9 +205,18 @@ jobs:
           bundle_path=root/'k70-debug/xnu-debug/bundle/source-manifest.json'
           bundle=json.loads(bundle_path.read_text())
           sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
-          files={name:sha(out/name) for name in ('build-report.json','crypto-hmac.json','SHA256SUMS','symbols.txt')}
+          for name,expected in bundle['files'].items():
+              if sha(bundle_path.parent/name)!=expected: raise SystemExit('Source inventory mismatch: '+name)
+          if bundle.get('control',{}).get('version')!=1: raise SystemExit('K70CTL/1 source contract missing')
+          checker=root/'k70-debug/xnu-debug/verify_kernel.py'
+          spec=importlib.util.spec_from_file_location('verify_kernel',checker)
+          verifier=importlib.util.module_from_spec(spec);spec.loader.exec_module(verifier)
+          validation=verifier.verify(kernel,out/'crypto-hmac.json')
+          (out/'kernel-validation.json').write_text(json.dumps(validation,indent=2)+'\n')
+          files={name:sha(out/name) for name in ('build-report.json','crypto-hmac.json','SHA256SUMS','symbols.txt','kernel-validation.json')}
           symbols=(out/'symbols.txt').read_text()
-          for symbol in ('_k70_xnu_early','_k70_xnu_after_vm','_k70_xnu_write','_k70_xnu_thread_start'):
+          for symbol in ('_k70_xnu_early','_k70_xnu_after_vm','_k70_xnu_write','_k70_xnu_thread_start',
+                         '_control_receive','_control_service','_control_psci'):
               if symbol not in symbols: raise SystemExit('Missing real USB hook: '+symbol)
           report=dict(schema_version=1,kind='k70-usb-debug-source-kernel',kernel_file=kernel.name,
               kernel_sha256=sha(kernel),kernel_bytes=kernel.stat().st_size,
@@ -215,7 +224,8 @@ jobs:
               usb_bundle_manifest=bundle,usb_bundle_manifest_sha256=sha(bundle_path),
               patch_sha256=bundle['files']['zzzz-k70-usb-log.patch'],evidence_files=files,
               ci=dict(repository=os.environ['GITHUB_REPOSITORY'],run_id=os.environ['GITHUB_RUN_ID'],commit=os.environ['GITHUB_SHA']),
-              scope='source platform kernel plus independent USB logging; no crypto bypass, OS image or phone operation')
+              control_protocol=validation['control_protocol'],control_symbols=validation['control_symbols_verified'],
+              scope='source platform kernel plus bounded diagnostic/reset USB control; no crypto bypass, OS image or phone operation')
           (out/'usb-debug-manifest.json').write_text(json.dumps(report,indent=2)+'\n')
           PY
 

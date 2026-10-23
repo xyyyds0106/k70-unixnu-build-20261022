@@ -516,7 +516,7 @@ STATIC VOID HandleEvent (UINT32 Event)
     if (Ep == 2) {
       ReadDma (RX_OFFSET, RX_BYTES);
       m.Status.RxBytes += Bytes;
-      /* Deliberately no parser, response, command or log-cursor operation. */
+      control_receive(m.Dma + RX_OFFSET, (unsigned)Bytes); /* Frame/queue only. */
       Transfer (2, RX_OFFSET, RX_BYTES, T_NORMAL);
       return;
     }

@@ -13,6 +13,7 @@
 #include <mach/thread_act.h>
 #include <machine/machine_routines.h>
 #include <pexpert/pexpert.h>
+#include <pexpert/device_tree.h>
 #include <vm/pmap.h>
 
 /* The pexpert translation unit deliberately has its own void printf ABI.
@@ -66,6 +67,7 @@ typedef uint64_t EFI_PHYSICAL_ADDRESS;
 
 #include "k70_usb_status.inc"
 #include "k70_usb_guards.inc"
+#include "k70_ctl_protocol.inc"
 
 void k70_xnu_early(boot_args *);
 void k70_xnu_after_vm(void);
@@ -80,6 +82,7 @@ static EFI_STATUS MapKernelDevices(void);
 static UINTN KernelDeviceBase(UINTN);
 static void KernelCache(void *, UINTN, BOOLEAN);
 static void MicroSecondDelay(UINTN);
+static void control_receive(const uint8_t *, unsigned) __attribute__((noinline));
 
 /* Exact physical data comes from the loader's BootArgs, never a board guess. */
 static uint64_t owned_base, owned_bytes, owned_va;
@@ -209,6 +212,8 @@ static void pump(void)
     K70UsbCdcPoll();
     unlock(&poll_lock);
 }
+
+#include "k70_xnu_control.inc"
 int k70_xnu_enabled(void) { return debug_enabled; }
 void k70_xnu_putc(char c)
 {
@@ -232,6 +237,7 @@ void k70_xnu_early(boot_args *args)
     owned_base = args->physBase;
     owned_bytes = args->memSize;
     owned_va = args->virtBase;
+    if (debug_enabled) control_init(args);
     if (debug_enabled) {
         message("K70 XNU K70XNU001 boot ring begins / source kernel");
         k70_xnu_checkpoint("PE_init_platform(FALSE) returned; XNU C is executing");
@@ -249,6 +255,7 @@ void k70_xnu_after_vm(void)
              (unsigned long long)m.Status.DmaAddress, (unsigned long long)log_total,
              (unsigned long long)__atomic_load_n(&log_dropped, __ATOMIC_RELAXED));
     message(line);
+    if (m.Status.Running) control_ready();
     /* Optional bounded foreground bringup window. No machine waits forever
      * for a PC. 60 seconds covers first Windows inbox-driver binding. */
     int wait_ms = 60000;
@@ -257,6 +264,7 @@ void k70_xnu_after_vm(void)
     if (wait_ms > 60000) wait_ms = 60000;
     for (int i=0; i<wait_ms && m.Status.Running; i++) {
         pump();
+        control_service();
         MicroSecondDelay(1000);
     }
     k70_xnu_checkpoint("USB foreground window ended; continuing real kernel startup");
@@ -265,6 +273,7 @@ static void usb_thread(void *arg __unused, wait_result_t result __unused)
 {
     while (!m.Status.Failed && m.Status.Running) {
         pump();
+        control_service();
         uint64_t deadline;
         clock_interval_to_deadline(1, NSEC_PER_MSEC, &deadline);
         (void)assert_wait_deadline(&sleep_channel, THREAD_UNINT, deadline);

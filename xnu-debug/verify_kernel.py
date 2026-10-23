@@ -23,6 +23,8 @@ def verify(kernel, hmac):
         raise ValueError('Load commands outside file')
     pos = 32
     sections, segments, symbols = [], [], {}
+    symbol_addresses = []
+    control_symbols = ('_control_receive', '_control_service', '_control_psci')
     symtab = None
     for _ in range(count):
         cmd, size = struct.unpack_from('<II', data, pos)
@@ -67,8 +69,9 @@ def verify(kernel, hmac):
         if name_end < 0:
             raise ValueError('Unterminated symbol')
         name = data[stroff+strx:name_end].decode(errors='strict')
+        symbol_addresses.append((sect,value))
         if name.startswith('_k70_xnu_') or name in ('_kernel_dma', '_source_corecrypto14_bootstrap',
-                                                   '_source_pthread_bootstrap'):
+                                                   '_source_pthread_bootstrap')+control_symbols:
             if name in symbols:
                 raise ValueError('Ambiguous required symbol: '+name)
             if sect > len(sections):
@@ -76,9 +79,24 @@ def verify(kernel, hmac):
             symbols[name] = {'va': value, 'section': sections[sect-1]}
     for name in ('_k70_xnu_early', '_k70_xnu_after_vm', '_k70_xnu_thread_start',
                  '_k70_xnu_write', '_source_corecrypto14_bootstrap', '_source_pthread_bootstrap',
-                 '_kernel_dma'):
+                 '_kernel_dma')+control_symbols:
         if name not in symbols:
             raise ValueError('Missing real linked symbol: '+name)
+    for name in control_symbols:
+        item=symbols[name]; section=item['section']
+        if not section['prot'] & 4 or section['kind']!=0 or not section['va']<=item['va']<section['va']+section['bytes']:
+            raise ValueError('Control symbol is not real executable text: '+name)
+    psci=symbols['_control_psci']; psci_section=psci['section']
+    section_id=sections.index(psci_section)+1
+    psci_end=min([v for s,v in symbol_addresses if s==section_id and v>psci['va']]+
+                 [psci_section['va']+psci_section['bytes']])
+    psci_offset=psci_section['file_offset']+psci['va']-psci_section['va']
+    psci_bytes=psci_end-psci['va']
+    if not 4<=psci_bytes<=4096 or psci_offset+psci_bytes>len(data):
+        raise ValueError('Invalid real PSCI helper bounds')
+    psci_code=data[psci_offset:psci_offset+psci_bytes]
+    if struct.pack('<I',0xd4000003) not in psci_code or struct.pack('<I',0xd4000002) not in psci_code:
+        raise ValueError('Real PSCI helper lacks expected SMC/HVC instructions')
     dma = symbols['_kernel_dma']
     section = dma['section']
     if dma['va'] & 0x3FFF or not (section['prot'] & 2) or section['kind'] != 1:
@@ -105,7 +123,9 @@ def verify(kernel, hmac):
     if int(seal['code_file_offset'], 0) != codeoff or seal['code_bytes'] != codesize or int(seal['hmac_file_offset'], 0) != macoff:
         raise ValueError('HMAC report offsets differ from the actual Mach-O')
     for marker in (b'K70XNU001', b'arm_vm_init returned; starting kernel-owned USB',
-                   b'PE_init_platform(FALSE) returned; XNU C is executing'):
+                   b'PE_init_platform(FALSE) returned; XNU C is executing',
+                   b'K70CTL READY version=1 boot=', b'K70CTL R id=',
+                   b'reboot-arm', b'reboot-confirm', b'ack-drain-timeout'):
         if marker not in data:
             raise ValueError('Kernel is missing transport/checkpoint strings')
     nonempty = [s for s in segments if s['bytes']]
@@ -115,6 +135,11 @@ def verify(kernel, hmac):
             'symbols': symbols, 'image_va_base': base, 'image_va_bytes': top-base,
             'dma_image_offset': dma['va']-base,
             'dma_bytes': 0x4000, 'serial': 'K70XNU001',
+            'control_protocol': 1, 'control_symbols_verified': list(control_symbols),
+            'psci_helper': {'va': psci['va'], 'bytes': psci_bytes,
+                            'sha256': hashlib.sha256(psci_code).hexdigest(),
+                            'smc_hvc_instructions_present': True,
+                            'runtime_conduit_and_features_verified': False},
             'hmac_report_sha256': hashlib.sha256(hmac.read_bytes()).hexdigest(),
             'post_hmac_verified': True, 'runtime_selftests_executed': False,
             'scope': 'linked image and real source POST HMAC only; hardware execution unproven'}
