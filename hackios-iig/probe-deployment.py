@@ -19,8 +19,9 @@ flags = [f'-I{root / p}' for p in ('iokit', 'osfmk', 'bsd', 'EXTERNAL_HEADERS')]
 flags += ['-isysroot', sdk, '-x', 'c++', '-std=gnu++1z']
 flags += ['-D' + d for d in manifest['defines']]
 records = []
-for deployment in ('16.5', '22.0', '22.5', 'ios16.5', 'iOS16.5'):
-    folder = out / deployment
+for index, deployment in enumerate(('16.5', '22.0', '22.5', 'ios16.5', 'iOS16.5')):
+    # macOS runner filesystems may be case insensitive.
+    folder = out / (str(index) + '-' + deployment)
     folder.mkdir()
     header, impl = folder / 'OSObject.h', folder / 'OSObject.iig.cpp'
     cmd = [tool, '--def', str(source), '--header', str(header), '--impl', str(impl),
