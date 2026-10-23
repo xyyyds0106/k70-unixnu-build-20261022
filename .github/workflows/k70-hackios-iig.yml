@@ -11,6 +11,9 @@ concurrency:
   cancel-in-progress: false
 
 env:
+  # This installed generator predates the separate kernelContent RPC ABI.
+  # The workflow records the actual version; compatibility is tested locally.
+  DEVELOPER_DIR: /Applications/Xcode_16.0.app/Contents/Developer
   HOMEBREW_NO_AUTO_UPDATE: "1"
   PYTHONDONTWRITEBYTECODE: "1"
   # This installed tool predates the kernelContent RPC ABI in IIG427.
