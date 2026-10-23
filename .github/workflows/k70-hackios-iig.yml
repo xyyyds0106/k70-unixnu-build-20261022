@@ -16,8 +16,6 @@ env:
   DEVELOPER_DIR: /Applications/Xcode_16.0.app/Contents/Developer
   HOMEBREW_NO_AUTO_UPDATE: "1"
   PYTHONDONTWRITEBYTECODE: "1"
-  # This installed tool predates the kernelContent RPC ABI in IIG427.
-  DEVELOPER_DIR: /Applications/Xcode_16.0.app/Contents/Developer
 
 jobs:
   generate:
