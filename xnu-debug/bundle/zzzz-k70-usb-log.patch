@@ -964,15 +964,14 @@
 +}
 --- /dev/null
 +++ b/pexpert/arm/k70_xnu_usb.c
-@@ -0,0 +1,277 @@
+@@ -0,0 +1,279 @@
 +/* SPDX-License-Identifier: BSD-2-Clause-Patent
 + * K70 source-kernel log transport. Included once by pexpert/arm/pe_serial.c.
 + * All code, 1 MiB RAM ring and DMA are permanent kernel-owned image storage.
 + * The USB peripheral is restarted only after arm_vm_init. No UEFI call or
 + * function address is present. No storage, clock, PMIC or SMMU writes occur.
 + */
-+#include <sys/types.h>
-+#include <sys/systm.h>
++#include <libkern/OSBase.h>
 +#include <stdint.h>
 +#include <stdbool.h>
 +#include <kern/clock.h>
@@ -981,7 +980,6 @@
 +#include <mach/thread_act.h>
 +#include <machine/machine_routines.h>
 +#include <pexpert/pexpert.h>
-+#include <pexpert/arm/boot.h>
 +#include <vm/pmap.h>
 +
 +/* The retained protocol spells its local types as the tested UEFI port did.
@@ -1000,8 +998,12 @@
 +#define EFIAPI
 +#define IN
 +#define OUT
++#ifndef TRUE
 +#define TRUE true
++#endif
++#ifndef FALSE
 +#define FALSE false
++#endif
 +#define EFI_SUCCESS 0
 +#define EFI_INVALID_PARAMETER 1
 +#define EFI_ALREADY_STARTED 2

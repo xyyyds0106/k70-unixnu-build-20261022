@@ -4,8 +4,7 @@
  * The USB peripheral is restarted only after arm_vm_init. No UEFI call or
  * function address is present. No storage, clock, PMIC or SMMU writes occur.
  */
-#include <sys/types.h>
-#include <sys/systm.h>
+#include <libkern/OSBase.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <kern/clock.h>
@@ -14,7 +13,6 @@
 #include <mach/thread_act.h>
 #include <machine/machine_routines.h>
 #include <pexpert/pexpert.h>
-#include <pexpert/arm/boot.h>
 #include <vm/pmap.h>
 
 /* The retained protocol spells its local types as the tested UEFI port did.
@@ -33,8 +31,12 @@ typedef uint64_t EFI_PHYSICAL_ADDRESS;
 #define EFIAPI
 #define IN
 #define OUT
+#ifndef TRUE
 #define TRUE true
+#endif
+#ifndef FALSE
 #define FALSE false
+#endif
 #define EFI_SUCCESS 0
 #define EFI_INVALID_PARAMETER 1
 #define EFI_ALREADY_STARTED 2
