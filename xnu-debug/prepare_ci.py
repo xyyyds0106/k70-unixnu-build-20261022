@@ -65,12 +65,23 @@ def install(device, bundle):
     destination = device / 'tools/k70-xnu-debug'
     if destination.exists():
         raise ValueError('Refusing to overwrite an existing debug bundle')
+    fixes = manifest.get('device_fixes')
+    if fixes is None or fixes.get('setting') != 'CONFIG_XNU_DT_PANIC_REGION=y':
+        raise ValueError('Required DT panic-region configuration fix is missing')
+    for relative, change in fixes['files'].items():
+        if hashlib.sha256((device/relative).read_bytes()).hexdigest() != change['before_sha256']:
+            raise ValueError('Pinned device fix source mismatch: '+relative)
+        if hashlib.sha256((bundle/'device-files'/relative).read_bytes()).hexdigest() != change['after_sha256']:
+            raise ValueError('Pinned device fix payload mismatch: '+relative)
     shutil.copytree(bundle, destination, ignore=shutil.ignore_patterns('reference', '__pycache__'))
     preparer.write_text(text.replace(anchor, anchor + HOOK))
+    for relative in fixes['files']:
+        shutil.copyfile(bundle/'device-files'/relative,device/relative)
     report = {'schema_version': 1, 'device_commit': actual,
               'preparer_sha256_before': digest,
               'preparer_sha256_after': hashlib.sha256(preparer.read_bytes()).hexdigest(),
               'bundle_manifest': manifest,
+              'device_file_fixes': fixes,
               'crypto_policy': 'unchanged source corecrypto POST and final HMAC sealing'}
     (destination / 'installation.json').write_text(json.dumps(report, indent=2)+'\n')
     return report
