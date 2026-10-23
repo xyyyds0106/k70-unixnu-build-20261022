@@ -1,0 +1,68 @@
+name: K70 HackiOS real DriverKit generation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: k70-hackios-iig-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  HOMEBREW_NO_AUTO_UPDATE: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  generate:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - name: Checkout the committed source-only generator inputs
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Record the real Xcode generator toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p iig-out
+          {
+            sw_vers
+            uname -m
+            xcodebuild -version
+            xcode-select -p
+            xcrun --find iig
+            xcrun --sdk iphoneos --show-sdk-path
+            xcrun --sdk iphoneos --show-sdk-version
+            xcrun --sdk macosx --show-sdk-path
+            xcrun --sdk macosx --show-sdk-version
+            xcrun clang --version
+            python3 --version
+          } 2>&1 | tee iig-out/toolchain.txt
+
+      - name: Checkout the exact public Apple interface definitions
+        uses: actions/checkout@v4
+        with:
+          repository: apple-oss-distributions/xnu
+          ref: c54f35ca767986246321eb901baf8f5ff7923f6a
+          path: xnu
+          persist-credentials: false
+
+      - name: Generate every committed interface with Apple's actual iig
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -u hackios-iig/build.py --source xnu --out iig-out/generated --sdk iphoneos \
+            2>&1 | tee iig-out/generation.log
+
+      - name: Preserve generated source and exact invocation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hackios-iig-${{ github.run_id }}-${{ github.run_attempt }}
+          path: iig-out/**
+          if-no-files-found: error
+          retention-days: 7

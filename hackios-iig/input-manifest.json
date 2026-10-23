@@ -1,0 +1,85 @@
+{
+  "source_repository": "https://github.com/apple-oss-distributions/xnu",
+  "source_commit": "c54f35ca767986246321eb901baf8f5ff7923f6a",
+  "source_tag": "xnu-8796.121.2",
+  "upstream_hackios_commit": "8e61187098f2c26c5daee8f9f72b6416aa64b9ab",
+  "source_iig_unmodified_from_apple": true,
+  "iig_rule": "iokit/DriverKit/Makefile:6-7,61",
+  "files": [
+    {
+      "path": "iokit/DriverKit/IOBufferMemoryDescriptor.iig",
+      "sha256": "688feb80ce5f2438a7f2789ecf10544aa9c107d2d17fd21ee759ee90191e5983"
+    },
+    {
+      "path": "iokit/DriverKit/IODMACommand.iig",
+      "sha256": "0f0e3e01d07ef058e4e97226b0657d1acb36ce74ec9e31b34c2b6dbee05fdaf1"
+    },
+    {
+      "path": "iokit/DriverKit/IODataQueueDispatchSource.iig",
+      "sha256": "0d1479c4843867a12ac84494624f8ef5dcd06ffa4482165b55425cb6e31ba701"
+    },
+    {
+      "path": "iokit/DriverKit/IODispatchQueue.iig",
+      "sha256": "c117da6edd587b9bd43fe65ddf1c21a7bb3db40ef5d6ce96f767c4dcd5df271a"
+    },
+    {
+      "path": "iokit/DriverKit/IODispatchSource.iig",
+      "sha256": "b8e7c08fc4817e4e124bcf85cfd0fe6c53486037850582cdd385462a9fda31f0"
+    },
+    {
+      "path": "iokit/DriverKit/IOEventLink.iig",
+      "sha256": "972a0b8a6675155cbd03fca24f39a1a0a0a15a4bc8499e9c184329dbe518507d"
+    },
+    {
+      "path": "iokit/DriverKit/IOInterruptDispatchSource.iig",
+      "sha256": "fa110ff11ff90c6d0639d11101631510283440976bf76d84cc76fcfed238f9a8"
+    },
+    {
+      "path": "iokit/DriverKit/IOMemoryDescriptor.iig",
+      "sha256": "4ed4ed39fcfa89f9ff70b7a7a7889f457cd9cf98054d2a0cf54e0c8446bd3fdd"
+    },
+    {
+      "path": "iokit/DriverKit/IOMemoryMap.iig",
+      "sha256": "335655b5e7d7b160cc9be9494279911a89ce73f9d35257381815caddad98a6fc"
+    },
+    {
+      "path": "iokit/DriverKit/IOService.iig",
+      "sha256": "d8756d78a1be18561e999949e9508a4f5ed700b99359d4efe3cd88fe1470f621"
+    },
+    {
+      "path": "iokit/DriverKit/IOServiceNotificationDispatchSource.iig",
+      "sha256": "d4d443fb1b75a26c2e2d6da92d875d5317dff5759d94e18dac065a2a84eae643"
+    },
+    {
+      "path": "iokit/DriverKit/IOServiceStateNotificationDispatchSource.iig",
+      "sha256": "6bff4922ed765ea3fb11ec742d86e1ee220b715254a37551729628684cb78163"
+    },
+    {
+      "path": "iokit/DriverKit/IOUserClient.iig",
+      "sha256": "313e814c5203bcb7c7390e87ae00845d45765039204ff628be9c98a3f6ee5a7f"
+    },
+    {
+      "path": "iokit/DriverKit/IOUserServer.iig",
+      "sha256": "94e6842addf0097f46a9deb8810b5642d90a0afb0d790e00a208f26c16b8df04"
+    },
+    {
+      "path": "iokit/DriverKit/IOWorkGroup.iig",
+      "sha256": "afe77e23460b87de542227172f528774f82911bbdd5eb10da8443d50ad849e77"
+    },
+    {
+      "path": "iokit/DriverKit/OSAction.iig",
+      "sha256": "d1f61a6e9db58d34a3a77880e6262d92e514968d4b1f60be736fe830b90f4f2e"
+    },
+    {
+      "path": "iokit/DriverKit/OSObject.iig",
+      "sha256": "2e7f15edaf527123f7366980f838e8c368f16cd0f2478cc6ef3f4d105f3678d3"
+    }
+  ],
+  "defines": [
+    "__IIG=1",
+    "DRIVERKIT_PRIVATE=1",
+    "PRIVATE_WIFI_ONLY=1",
+    "XNU_PLATFORM_iPhoneOS"
+  ],
+  "kernel_gic_patch_required_for_iig": false
+}
