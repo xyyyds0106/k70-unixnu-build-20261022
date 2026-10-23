@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "kind": "k70-usb-debug-source-kernel",
+  "kernel_file": "kernel.development.vermeer-build.macho",
+  "kernel_sha256": "535e31251cd73d27ca9dcd5ea3e5fbfa1291187f69fbcec5c3abab5dba9c970a",
+  "kernel_bytes": 21472944,
+  "base_refs": {
+    "unixnu": "b6ae99c17194e6a18fd819d3148e69fe405e91fc",
+    "device": "d4dbb3683023a17bb468b9774f52c87f3060e739",
+    "xnu": "d8b80295118ef25ac3a784134bcf95cd8e88109f"
+  },
+  "usb_bundle_manifest": {
+    "schema_version": 1,
+    "xnu_commit": "d8b80295118ef25ac3a784134bcf95cd8e88109f",
+    "unixnu_commit": "b6ae99c17194e6a18fd819d3148e69fe405e91fc",
+    "device_commit": "d4dbb3683023a17bb468b9774f52c87f3060e739",
+    "serial": "K70XNU001",
+    "files": {
+      "src/k70_ctl_protocol.inc": "a263f549b55c6d5251d76a64672f66c998151196065dc0f0ca2152dc5192ee84",
+      "src/k70_usb_guards.inc": "ffeeb1ef34de42950a9cc7c20b4af8bcbb01b1964ca799dda716af19b1834acf",
+      "src/k70_usb_status.inc": "42f0183edec431df8aa3e9590083fb2e5a8eef8b0580047847615cc17083ec4a",
+      "src/k70_usb_transport.inc": "883efe8016189c913c673a6c025fdd498058e95f83fd3ccad55fb27aafd0cf22",
+      "src/k70_xnu_control.inc": "cdcc8eb8a7422842427b069929a8f90e84c1e98b224456db17475f639cdd77e9",
+      "src/k70_xnu_usb.c": "794eae80199065d3aa04aab3f1fe872e1723af94dd76a7e877b10ce2b2697cff",
+      "zzzz-k70-usb-log.patch": "6def26ea9a3ef5f5e3ea3f2608a5b8f3d25ee7a95ee54c37d3d5f9fe09782a43",
+      "control-contract.json": "294f2d5e9d5373a1b50ce33e72845a4e2a0a389f8d3b4001720053fd6c9f579f",
+      "device-fixes.json": "4f376ef83e05fa36afd47c314e578cdc76c7152f3b80983d6e84daf75337171b",
+      "device-files/configs/vermeer_platform_defconfig": "4dbc43ff3d73125bd9777776376c26fb21f21317f1e5575374c8b9b5aedfd484",
+      "device-files/tools/build_source_kernel.py": "5096d06ccd7f4931402adde65275557941343761634a94cf7f5139eb1bc3397e",
+      "device-files/tests/test_configuration.py": "21d455d34c92fa931657671743252fd60f7daeee8b7d1aeee620bd80917f562b"
+    },
+    "device_fixes": {
+      "schema_version": 1,
+      "kind": "existing-upstream-dt-panic-region",
+      "device_commit": "d4dbb3683023a17bb468b9774f52c87f3060e739",
+      "files": {
+        "configs/vermeer_platform_defconfig": {
+          "before_sha256": "cf4354659d71c7b8ef23fcd8800ae52e13e2ca6735f640f44e17e742ab902c35",
+          "after_sha256": "4dbc43ff3d73125bd9777776376c26fb21f21317f1e5575374c8b9b5aedfd484"
+        },
+        "tools/build_source_kernel.py": {
+          "before_sha256": "41196a776da535b454add4b2afa139824f214ae50d2a8ef0bf45d5774fa45967",
+          "after_sha256": "5096d06ccd7f4931402adde65275557941343761634a94cf7f5139eb1bc3397e"
+        },
+        "tests/test_configuration.py": {
+          "before_sha256": "7b9e3a424f0cffd54571e5b591ab9793c0ebc52979bb5ef94186471d6ff510d3",
+          "after_sha256": "21d455d34c92fa931657671743252fd60f7daeee8b7d1aeee620bd80917f562b"
+        }
+      },
+      "setting": "CONFIG_XNU_DT_PANIC_REGION=y",
+      "upstream_patch": "native-dt-panic-region.patch",
+      "upstream_patch_sha256": "b60c2a9a72ea23832f1e64348a5c5d1152cf05db6c156283dd8a93c804cd89cb",
+      "unsafe_previous_kernel_sha256": "747f0fc77a2aaecd4615c345171ac778fdce6a0620b1c999f7e07bcf3917b395",
+      "previous_disassembly": "reports/k70-current-pe-create-console-disassembly.txt",
+      "reference": "https://github.com/tycykp/UniXNU-OnePlus-Ace5/blob/694b39eb76e4019c75c89780812c68c12070658e/hardware/panic-console-fixed-address.json",
+      "crypto_post_and_hmac": "unchanged"
+    },
+    "scope": "kernel logs and bounded K70CTL diagnostic/reset control; no crypto changes, root or OS data",
+    "control": {
+      "version": 1,
+      "max_wire_bytes": 256,
+      "mailbox_requests": 1,
+      "reset": "exact boot ID,10-second single-use token, validated DT PSCI conduit and FEATURES",
+      "execution": "foreground/worker only after USB poll returns; never console producer"
+    }
+  },
+  "usb_bundle_manifest_sha256": "370e4f6c3da12641549fc4cc2c01b5d79dc24728a4cd6b231de5888e06bf0fea",
+  "patch_sha256": "6def26ea9a3ef5f5e3ea3f2608a5b8f3d25ee7a95ee54c37d3d5f9fe09782a43",
+  "evidence_files": {
+    "build-report.json": "32b96d07dd7bd89a4d7fe0e9d2be54c624b4d6f7a2cf73e7bbb33d7f7f3e7ed8",
+    "crypto-hmac.json": "a5f5e8de4e055db764abf6c8b3dd314e9bd1059d4732798a8b838a40cc70ebde",
+    "SHA256SUMS": "db2744813bc4e55fd30a579327e718dda6d1146c11f1979de1cc1ac903b6fcd4",
+    "symbols.txt": "a1873cbf44231be4789906af64830680e73d5cef03c57084c1e3214bc0afdbb1",
+    "kernel-validation.json": "cd047d23dc102bbdaed29859cb832bdd72f3e27e508ec7643ea1c85e00a7036a"
+  },
+  "ci": {
+    "repository": "xyyyds0106/k70-unixnu-build-20261022",
+    "run_id": "39906691508",
+    "commit": "3af63824940e0e6a3f6259362b37b84c3cca59f4"
+  },
+  "control_protocol": 1,
+  "control_symbols": [
+    "_control_receive",
+    "_control_service",
+    "_control_psci"
+  ],
+  "scope": "source platform kernel plus bounded diagnostic/reset USB control; no crypto bypass, OS image or phone operation"
+}

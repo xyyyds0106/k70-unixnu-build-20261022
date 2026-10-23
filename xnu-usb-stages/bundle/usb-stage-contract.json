@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "kind": "k70-xnu-usb-stages-source-kernel",
+  "parent_source_manifest_sha256": "d3306df76cd9d4571502199594b204b58528b7f6b187f89ced7cdee792bdc246",
+  "parent_kernel_sha256": "27b71a74f5d14c729f2c2799bf8a2a9c90819c0ac544f7b28026af6a4c4ebfee",
+  "parent_ci_manifest_sha256": "8f6813d1d144b1b8436ac2ac52cf24f3a0413d6762448345b836685e8b586bae",
+  "bootarg": "k70_usb_stage",
+  "required_flags": {
+    "k70_probe": "3",
+    "k70_usb": "1"
+  },
+  "default": "absent preserves frozen Early behavior",
+  "modes": {
+    "1": "four ml_io_map succeeded; before first device MMIO read",
+    "2": "all hardware guards and halted checks succeeded; before AllocateDma",
+    "3": "owned BSS DMA translation/linear/cache guards succeeded; before ControllerTouched and controller writes"
+  },
+  "invalid": "any present invalid/conflicting stage suppresses all legacy early probes and aborts initialization at U1",
+  "selected": "selected reset return/failure aborts initialization; no fallthrough into controller writes",
+  "delay_ms": 4000,
+  "symbols": [
+    "_k70_xnu_usb_stage",
+    "_k70_xnu_usb_stage_reset",
+    "_k70_probe_reset_core"
+  ],
+  "boundary_symbols": [
+    "_MapKernelDevices",
+    "_CheckSmmu",
+    "_AllocateDma",
+    "_StopEngine",
+    "_K70UsbCdcInitialize"
+  ],
+  "reset": "shared bounded independent ADT PSCI core; parent counter/frequency/iteration gates unchanged",
+  "controller_writes_before_selected_stage": false,
+  "dma_started_before_selected_stage": false,
+  "crypto_post_hmac_and_platform_policy": "inherited unchanged",
+  "evidence_limit": "Host PLAN is intent only; automatic return permits inferred checkpoint, not received XNU log or full boot"
+}
