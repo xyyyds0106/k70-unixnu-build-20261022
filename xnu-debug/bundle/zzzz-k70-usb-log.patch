@@ -964,7 +964,7 @@
 +}
 --- /dev/null
 +++ b/pexpert/arm/k70_xnu_usb.c
-@@ -0,0 +1,279 @@
+@@ -0,0 +1,286 @@
 +/* SPDX-License-Identifier: BSD-2-Clause-Patent
 + * K70 source-kernel log transport. Included once by pexpert/arm/pe_serial.c.
 + * All code, 1 MiB RAM ring and DMA are permanent kernel-owned image storage.
@@ -981,6 +981,13 @@
 +#include <machine/machine_routines.h>
 +#include <pexpert/pexpert.h>
 +#include <vm/pmap.h>
++
++/* The pexpert translation unit deliberately has its own void printf ABI.
++ * Import only snprintf's exact BSD libkern declaration, not sys/systm.h or
++ * libkern/libkern.h (which also import the conflicting int printf).
++ * Signature matches pinned bsd/libkern/libkern.h:166; no system type is changed.
++ */
++extern int snprintf(char *, size_t, const char *, ...) __printflike(3, 4);
 +
 +/* The retained protocol spells its local types as the tested UEFI port did.
 + * These are plain kernel-local C aliases. There is no UEFI header or runtime. */

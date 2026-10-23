@@ -15,6 +15,13 @@
 #include <pexpert/pexpert.h>
 #include <vm/pmap.h>
 
+/* The pexpert translation unit deliberately has its own void printf ABI.
+ * Import only snprintf's exact BSD libkern declaration, not sys/systm.h or
+ * libkern/libkern.h (which also import the conflicting int printf).
+ * Signature matches pinned bsd/libkern/libkern.h:166; no system type is changed.
+ */
+extern int snprintf(char *, size_t, const char *, ...) __printflike(3, 4);
+
 /* The retained protocol spells its local types as the tested UEFI port did.
  * These are plain kernel-local C aliases. There is no UEFI header or runtime. */
 typedef uint8_t UINT8;

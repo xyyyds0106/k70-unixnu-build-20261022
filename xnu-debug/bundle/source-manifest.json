@@ -8,8 +8,8 @@
     "src/k70_usb_guards.inc": "ffeeb1ef34de42950a9cc7c20b4af8bcbb01b1964ca799dda716af19b1834acf",
     "src/k70_usb_status.inc": "42f0183edec431df8aa3e9590083fb2e5a8eef8b0580047847615cc17083ec4a",
     "src/k70_usb_transport.inc": "727a060ee956500175157446ede914cf081c509b45b3cebcd5637c2a6b5c80c6",
-    "src/k70_xnu_usb.c": "9943403e2fa771dee8ac68f45fc48f11c4c5c403eb09145c1ad662fdb753be63",
-    "zzzz-k70-usb-log.patch": "a05788a5d5c8cac99106f75a4a972eb88cc350c780593af430dca090fd61f1e1"
+    "src/k70_xnu_usb.c": "0a9f548207811581297a291e7843b3b5a7cae0c8ea2d94a8cf407b79bb90b030",
+    "zzzz-k70-usb-log.patch": "15b2bdf1b9cf7c843fb1d1f40e644514a9428cf7457add12abf2ad3df0e2cde7"
   },
   "scope": "kernel log only; no crypto changes, no root or OS data"
 }
