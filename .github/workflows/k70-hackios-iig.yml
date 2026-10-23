@@ -43,6 +43,10 @@ jobs:
             python3 --version
           } 2>&1 | tee iig-out/toolchain.txt
 
+      - name: Inspect installed generator compatibility options
+        shell: bash
+        run: python3 -u hackios-iig/inspect-tools.py
+
       - name: Checkout the exact public Apple interface definitions
         uses: actions/checkout@v4
         with:
